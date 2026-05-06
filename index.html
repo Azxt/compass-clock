@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="羅盤時鐘">
+    
+    <meta name="theme-color" content="#000000">
+
+    <title>傳統羅盤時鐘</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="ui-controls" id="ui-controls">
+        <div class="action-btn" id="btn-settings" title="開啟設定">⚙️ 設定</div>
+    </div>
+
+    <div class="settings-panel" id="settings-panel">
+        <div class="panel-header">
+            <span>⚙️ 設定選單</span>
+            <span class="close-panel" id="close-panel" title="關閉選單">✖</span>
+        </div>
+        
+        <div class="setting-item">
+            <label>羅盤畫面比例</label>
+            <input type="range" id="scale-range" min="0.4" max="1.5" step="0.01" value="1">
+        </div>
+        <div class="setting-item">
+            <label>背景不透明度 (底色深淺)</label>
+            <input type="range" id="opacity-range" min="0" max="1" step="0.05" value="0.1">
+        </div>
+        <div class="setting-item">
+            <label>時區設定</label>
+            <select id="tz-select" class="tz-select">
+                <option value="9">UTC +09:00 (日本/韓國)</option>
+                <option value="8" selected>UTC +08:00 (台灣標準時間)</option>
+                <option value="7">UTC +07:00 (泰國/越南)</option>
+                <option value="0">UTC +00:00 (格林威治)</option>
+                <option value="-5">UTC -05:00 (美東時間)</option>
+                <option value="-8">UTC -08:00 (太平洋時間)</option>
+            </select>
+        </div>
+        <div class="setting-item">
+            <label class="check-box"><input type="checkbox" id="auto-hide-toggle" checked> 啟用點擊螢幕隱藏按鈕</label>
+        </div>
+        <div id="ntp-status" class="setting-tip" style="color: #4ade80;">網路時間: 等待同步...</div>
+    </div>
+
+    <div class="app-scale-container" id="scale-ctx">
+        <div class="compass" id="compass">
+            <div class="center-hex-wrapper">
+                <div class="center-hex">
+                    <span class="taiji">☯</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="date-info" class="date-display" title="點擊切換西元/農曆"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>

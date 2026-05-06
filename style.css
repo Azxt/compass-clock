@@ -1,0 +1,135 @@
+:root {
+    --accent-gold: #ffd700;
+    --ui-scale: 1;
+    --bg-opacity: 0.1; 
+}
+
+* { 
+    margin: 0; padding: 0; box-sizing: border-box; 
+    /* 核心優化：消除手機點擊時的灰色半透明高光 */
+    -webkit-tap-highlight-color: transparent; 
+}
+
+body {
+    width: 100vw; height: 100vh;
+    background: #000; /* 手機版使用純黑，OLED螢幕最省電 */
+    font-family: "Microsoft JhengHei", "PingFang TC", sans-serif;
+    color: #fff; overflow: hidden;
+    
+    /* 核心優化：防止 iOS / Android 誤觸與滾動回彈 */
+    touch-action: none; 
+    overscroll-behavior: none;
+    -webkit-user-select: none; user-select: none;
+    -webkit-touch-callout: none;
+}
+
+/* 按鈕智能隱藏區 (手機版改為透過 JS 控制 class) */
+.ui-controls {
+    transition: opacity 0.3s ease, visibility 0.3s;
+    z-index: 3000; position: relative;
+}
+body.hide-ui .ui-controls { opacity: 0; visibility: hidden; }
+
+.action-btn {
+    position: absolute; 
+    top: max(20px, env(safe-area-inset-top)); /* 避開 iPhone 瀏海 */
+    left: 20px;
+    font-size: 16px; font-weight: bold; cursor: pointer;
+    background: rgba(30, 30, 30, 0.9); border: 1px solid var(--accent-gold);
+    color: var(--accent-gold); padding: 8px 15px; border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.8); pointer-events: auto;
+}
+
+.settings-panel {
+    position: absolute; 
+    top: max(70px, calc(env(safe-area-inset-top) + 50px)); 
+    left: 20px;
+    background: rgba(10, 10, 10, 0.98); backdrop-filter: blur(10px);
+    padding: 20px; border-radius: 12px; z-index: 3000;
+    border: 2px solid var(--accent-gold); box-shadow: 0 10px 30px rgba(0,0,0,1);
+    opacity: 0; visibility: hidden; transform: translateY(-10px);
+    transition: all 0.3s ease-in-out;
+}
+.settings-panel.show { opacity: 1; visibility: visible; transform: translateY(0); }
+
+.panel-header {
+    display: flex; justify-content: space-between; align-items: center;
+    color: var(--accent-gold); font-size: 16px; font-weight: bold;
+    margin-bottom: 15px; padding-bottom: 12px; border-bottom: 1px solid rgba(255, 215, 0, 0.3);
+}
+.close-panel { cursor: pointer; color: #ff5555; font-size: 18px; transition: 0.2s; padding: 0 10px;}
+
+.setting-item { margin-bottom: 16px; font-size: 15px; font-weight: bold; display: flex; flex-direction: column; gap: 8px; }
+.setting-item label:not(.check-box) { color: var(--accent-gold); letter-spacing: 1px; }
+.check-box { display: flex; align-items: center; cursor: pointer; gap: 8px; color: #ffffff; }
+.setting-tip { font-size: 13px; font-weight: bold; margin-top: 15px; border-top: 1px solid #444; padding-top: 12px; }
+
+.tz-select {
+    background: #1a1a1a; color: #ffffff; border: 1px solid var(--accent-gold);
+    padding: 8px; border-radius: 6px; font-size: 14px; font-weight: bold; outline: none;
+}
+
+.app-scale-container {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(var(--ui-scale));
+    transition: transform 0.1s ease-out; pointer-events: none; 
+}
+
+.compass { position: relative; width: 0; height: 0; display: flex; justify-content: center; align-items: center; }
+
+.ring {
+    position: absolute; border-radius: 50%;
+    border: 1px solid rgba(255, 215, 0, 0.2);
+    background: rgba(0, 0, 0, var(--bg-opacity)); 
+    transition: transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.ring-bagua  { width: 180px; height: 180px; z-index: 60; } 
+.ring-stem   { width: 280px; height: 280px; z-index: 50; }
+.ring-branch { width: 380px; height: 380px; z-index: 40; }
+.ring-hour   { width: 520px; height: 520px; z-index: 30; }
+.ring-minute { width: 660px; height: 660px; z-index: 20; }
+.ring-second { width: 800px; height: 800px; z-index: 10; }
+
+.label {
+    position: absolute; width: 100%; height: 30px;
+    top: calc(50% - 15px); left: 0; transform-origin: center center;
+    display: flex; justify-content: flex-end; align-items: center;
+    padding-right: 12px; font-size: 14px; font-weight: 600;
+    text-shadow: 1px 1px 1px #000, -1px -1px 1px #000, 0 0 5px rgba(0,0,0,0.8);
+}
+
+.active { color: var(--accent-gold); font-size: 1.3em; text-shadow: 0 0 12px var(--accent-gold); }
+
+/* 八角形金邊底座 */
+.center-hex-wrapper {
+    position: absolute; width: 46px; height: 46px; background: var(--accent-gold); 
+    clip-path: polygon(29.3% 0%, 70.7% 0%, 100% 29.3%, 100% 70.7%, 70.7% 100%, 29.3% 100%, 0% 70.7%, 0% 29.3%);
+    display: flex; justify-content: center; align-items: center; z-index: 100;
+}
+
+.center-hex {
+    width: 42px; height: 42px; background: rgba(10, 10, 10, 0.95); 
+    clip-path: polygon(29.3% 0%, 70.7% 0%, 100% 29.3%, 100% 70.7%, 70.7% 100%, 29.3% 100%, 0% 70.7%, 0% 29.3%);
+    display: flex; justify-content: center; align-items: center;
+}
+
+/* 太極符號轉 90 度 */
+.taiji {
+    color: var(--accent-gold); font-size: 30px; display: inline-block;
+    transform: rotate(90deg); text-shadow: 0 0 8px rgba(255, 215, 0, 0.8);
+    line-height: 1; padding-bottom: 2px;
+}
+
+/* 手機版：日期區塊固定在畫面底部，避免被螢幕切除 */
+.date-display {
+    position: absolute; 
+    bottom: max(30px, env(safe-area-inset-bottom)); 
+    left: 50%; transform: translateX(-50%);
+    color: var(--accent-gold); font-size: 16px; font-weight: bold;
+    background: rgba(0, 0, 0, 0.85); padding: 10px 20px; border-radius: 30px;
+    border: 1px solid var(--accent-gold); box-shadow: 0 0 15px rgba(0,0,0,0.8);
+    cursor: pointer; z-index: 9999; 
+    transition: background 0.2s; letter-spacing: 1px; white-space: nowrap; 
+    pointer-events: auto; 
+}
