@@ -35,7 +35,6 @@ function updateScaleFromWindow() {
     document.documentElement.style.setProperty('--ui-scale', scale);
 }
 
-// 自動隱藏介面邏輯
 function resetHideTimer() {
     clearTimeout(hideTimer);
     document.body.classList.remove('hide-ui');
@@ -98,7 +97,6 @@ function init() {
     resetHideTimer();
 }
 
-// 雙重原子鐘 API 備援機制
 async function syncWithHttpTime() {
     const apiEndpoints = [
         'https://worldtimeapi.org/api/timezone/Etc/UTC',
@@ -109,7 +107,6 @@ async function syncWithHttpTime() {
         try {
             const start = Date.now();
             const response = await fetch(url);
-            
             if (!response.ok) throw new Error('連線狀態異常');
             
             const data = await response.json();
@@ -127,7 +124,6 @@ async function syncWithHttpTime() {
             document.getElementById('ntp-status').innerText = `網路時間: 🌐 已同步高精度原子鐘 (誤差 ${Math.round(ntpOffsetMs)}ms)`;
             document.getElementById('ntp-status').style.color = "#4ade80";
             return; 
-            
         } catch (error) {
             console.warn(`無法從 ${url} 取得時間，嘗試下一個...`);
         }
@@ -145,18 +141,23 @@ function getAccurateDate() {
     return new Date(targetLocalMs);
 }
 
+// 【修復核心】使用虛擬 UTC 正午時間來計算農曆
 function getLunar(targetDate) {
-    let yIdx = (targetDate.getUTCFullYear() - 1984 + 600) % 60; 
-    let mIdx = targetDate.getUTCMonth(); 
-    let dIdx = targetDate.getUTCDate() - 1;
+    const pseudoUtc = new Date(Date.UTC(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 12, 0, 0));
+
+    let yIdx = (pseudoUtc.getUTCFullYear() - 1984 + 600) % 60; 
+    let mIdx = pseudoUtc.getUTCMonth(); 
+    let dIdx = pseudoUtc.getUTCDate() - 1;
+
     try {
-        const str = new Intl.DateTimeFormat('en-US-u-ca-chinese', { timeZone: 'UTC', month: 'numeric', day: 'numeric' }).format(targetDate);
-        const parts = str.match(/\d+/g);
-        if (parts && parts.length >= 2) {
-            mIdx = parseInt(parts[0]) - 1;
-            dIdx = parseInt(parts[1]) - 1;
-        }
+        const formatter = new Intl.DateTimeFormat('en-US-u-ca-chinese', { timeZone: 'UTC', month: 'numeric', day: 'numeric' });
+        const parts = formatter.formatToParts(pseudoUtc);
+        parts.forEach(p => {
+            if (p.type === 'month') mIdx = parseInt(p.value) - 1;
+            if (p.type === 'day') dIdx = parseInt(p.value) - 1;
+        });
     } catch (e) {}
+
     return { yIdx: isNaN(yIdx) ? 0 : yIdx, mIdx: isNaN(mIdx) ? 0 : mIdx, dIdx: isNaN(dIdx) ? 0 : dIdx };
 }
 
