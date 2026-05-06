@@ -151,12 +151,49 @@ body.settings-open .ui-controls { opacity: 1; visibility: visible; }
     transition: background 0.2s, transform 0.1s; 
     pointer-events: auto; 
 }
+.date-display {
+    position: absolute; 
+    /* 手機上固定在底部，避開羅盤縮放導致的排版干擾 */
+    bottom: max(30px, env(safe-area-inset-bottom)); 
+    top: auto; 
+    left: 50%; 
+    transform: translateX(-50%); 
+    
+    color: var(--accent-gold); 
+    font-size: 15px; /* 適合手機閱讀的大小 */
+    font-weight: bold;
+    background: rgba(0, 0, 0, 0.85); 
+    padding: 10px 20px; 
+    border-radius: 20px;
+    border: 1px solid var(--accent-gold); 
+    box-shadow: 0 0 15px rgba(0,0,0,0.8);
+    
+    /* 核心修復：允許自動換行，且最寬不超過螢幕的 90% */
+    width: max-content;
+    max-width: 90vw; 
+    text-align: center;
+    white-space: normal; 
+    line-height: 1.6; /* 換行後的舒適行距 */
+    
+    cursor: pointer; z-index: 9999; -webkit-app-region: no-drag; 
+    transition: background 0.2s; 
+    pointer-events: auto; 
+}
 .date-display:hover { background: rgba(50, 50, 50, 0.95); }
 
-/* 針對極窄螢幕 (如舊款 iPhone SE) 的微調 */
-@media (max-width: 350px) {
+/* =========================================
+   電腦 / 平板大螢幕專屬設定
+   ========================================= */
+@media (min-width: 768px) {
     .date-display {
-        padding: 8px 15px;
-        bottom: 10px; /* 手機版若 top 太擠會改用 bottom */
+        /* 電腦版恢復為跟隨羅盤下方，並同步縮放 */
+        bottom: auto;
+        top: calc(50% + 420px * var(--ui-scale)); 
+        transform: translateX(-50%) scale(var(--ui-scale));
+        
+        font-size: 20px;
+        padding: 12px 30px;
+        border-radius: 30px;
+        white-space: nowrap; /* 電腦螢幕夠寬，強制單行更美觀 */
     }
 }
