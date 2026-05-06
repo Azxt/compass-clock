@@ -5,12 +5,9 @@ const L_MONTHS = ["正月", "二月", "三月", "四月", "五月", "六月", "�
 const L_DAYS = ["初一","初二","初三","初四","初五","初六","初七","初八","初九","初十","十一","十二","十三","十四","十五","十六","十七","十八","十九","二十","廿一","廿二","廿三","廿四","廿五","廿六","廿七","廿八","廿九","三十"];
 const WEEKDAYS = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
 
-// 24節氣名稱與高精度太陽黃經偏移常數
+// 24節氣高精度太陽黃經偏移常數
 const SOLAR_TERMS = ["小寒", "大寒", "立春", "雨水", "驚蟄", "春分", "清明", "穀雨", "立夏", "小滿", "芒種", "夏至", "小暑", "大暑", "立秋", "處暑", "白露", "秋分", "寒露", "霜降", "立冬", "小雪", "大雪", "冬至"];
 const TERM_INFO = [0,21208,42467,63836,85337,107014,128867,150921,173149,195551,218072,240693,263343,285989,308563,331033,353350,375494,397447,419210,440795,462224,483532,504758];
-
-const L_YEARS = [];
-for(let i=0; i<60; i++) L_YEARS.push(STEMS[i%10] + BRANCHES[i%12] + "年");
 
 const config = [
     { type: 'bagua',  data: BAGUA,    radius: 'bagua' },
@@ -25,9 +22,8 @@ let currentAngles = { bagua: 0, stem: 0, branch: 0, hour: 0, minute: 0, second: 
 let lastIndices = { bagua: -1, stem: -1, branch: -1, hour: -1, minute: -1, second: -1 };
 let isLunarFormat = false; 
 let ntpOffsetMs = 0; 
-let hideTimer = null; // 手機版隱藏按鈕的計時器
+let hideTimer = null; 
 
-// 手機版基準寬度較小，以適應直立螢幕
 const BASE_WINDOW_SIZE = 950;
 
 function updateScaleFromWindow() {
@@ -39,7 +35,7 @@ function updateScaleFromWindow() {
     document.documentElement.style.setProperty('--ui-scale', scale);
 }
 
-// 手機版：點擊螢幕顯示按鈕，3秒後自動隱藏
+// 自動隱藏介面邏輯
 function resetHideTimer() {
     clearTimeout(hideTimer);
     document.body.classList.remove('hide-ui');
@@ -47,11 +43,10 @@ function resetHideTimer() {
     const autoHide = document.getElementById('auto-hide-toggle').checked;
     const isSettingsOpen = document.getElementById('settings-panel').classList.contains('show');
     
-    // 如果設定面板打開，或關閉了自動隱藏，就不隱藏
     if (autoHide && !isSettingsOpen) {
         hideTimer = setTimeout(() => {
             document.body.classList.add('hide-ui');
-        }, 3000); // 3秒後隱藏
+        }, 3000); 
     }
 }
 
@@ -73,11 +68,9 @@ function init() {
     updateScaleFromWindow();
     window.addEventListener('resize', updateScaleFromWindow);
 
-    // 觸控螢幕任一處，喚醒 UI
-    document.addEventListener('touchstart', resetHideTimer);
+    document.addEventListener('touchstart', resetHideTimer, {passive: true});
     document.addEventListener('mousemove', resetHideTimer);
 
-    // 面板開關
     document.getElementById('btn-settings').addEventListener('click', (e) => {
         e.stopPropagation();
         document.getElementById('settings-panel').classList.add('show');
@@ -96,9 +89,7 @@ function init() {
     });
 
     const scaleSlider = document.getElementById('scale-range');
-    scaleSlider.addEventListener('input', e => {
-        document.documentElement.style.setProperty('--ui-scale', parseFloat(e.target.value));
-    });
+    scaleSlider.addEventListener('input', updateScaleFromWindow);
 
     document.getElementById('opacity-range').addEventListener('input', e => document.documentElement.style.setProperty('--bg-opacity', e.target.value));
     document.getElementById('auto-hide-toggle').addEventListener('change', resetHideTimer);
@@ -107,23 +98,43 @@ function init() {
     resetHideTimer();
 }
 
-// 手機支援的 HTTP 精準網路對時
+// 雙重原子鐘 API 備援機制
 async function syncWithHttpTime() {
-    try {
-        const start = Date.now();
-        const response = await fetch('https://worldtimeapi.org/api/timezone/Etc/UTC');
-        const data = await response.json();
-        const end = Date.now();
-        
-        const delay = (end - start) / 2;
-        const serverTime = new Date(data.utc_datetime).getTime() + delay;
-        
-        ntpOffsetMs = serverTime - Date.now(); 
-        document.getElementById('ntp-status').innerText = `網路時間: 已同步 (誤差 ${Math.round(ntpOffsetMs)}ms)`;
-    } catch (error) {
-        document.getElementById('ntp-status').innerText = "網路時間: 離線，使用手機系統時間";
-        document.getElementById('ntp-status').style.color = "#f87171";
+    const apiEndpoints = [
+        'https://worldtimeapi.org/api/timezone/Etc/UTC',
+        'https://timeapi.io/api/Time/current/zone?timeZone=UTC'
+    ];
+
+    for (let url of apiEndpoints) {
+        try {
+            const start = Date.now();
+            const response = await fetch(url);
+            
+            if (!response.ok) throw new Error('連線狀態異常');
+            
+            const data = await response.json();
+            const end = Date.now();
+            const delay = (end - start) / 2;
+            
+            let serverTime;
+            if (data.utc_datetime) {
+                serverTime = new Date(data.utc_datetime).getTime() + delay;
+            } else if (data.dateTime) {
+                serverTime = new Date(data.dateTime + "Z").getTime() + delay;
+            }
+            
+            ntpOffsetMs = serverTime - Date.now(); 
+            document.getElementById('ntp-status').innerText = `網路時間: 🌐 已同步高精度原子鐘 (誤差 ${Math.round(ntpOffsetMs)}ms)`;
+            document.getElementById('ntp-status').style.color = "#4ade80";
+            return; 
+            
+        } catch (error) {
+            console.warn(`無法從 ${url} 取得時間，嘗試下一個...`);
+        }
     }
+
+    document.getElementById('ntp-status').innerText = "網路時間: 📶 離線模式，使用系統時間";
+    document.getElementById('ntp-status').style.color = "#f87171";
 }
 
 function getAccurateDate() {
